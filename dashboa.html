@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart E-Waste Bin Dashboard</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    min-height: 100vh;
+    color: #fff;
+  }
+
+  h1 {
+    text-align: center;
+    margin-top: 40px;
+    color: #fff;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+  }
+
+  /* Login container */
+  #loginContainer {
+    width: 300px;
+    margin: 50px auto;
+    background: rgba(0,0,0,0.7);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+
+  #loginContainer input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+  }
+
+  #loginContainer button {
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: none;
+    background: #2ecc71;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  #loginContainer button:hover { background: #27ae60; }
+
+  .error { color: #e74c3c; margin-top: 10px; }
+
+  /* Forgot password link */
+  .forgot {
+    margin-top: 10px;
+    display: block;
+    color: #3498db;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* Dashboard */
+  #dashboard { display: none; padding: 20px; }
+
+  #searchInput {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 20px;
+    width: 320px;
+    border-radius: 25px;
+    border: none;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    outline: none;
+  }
+
+  .bin-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .bin-card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    width: 220px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    text-align: left;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .bin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+  }
+
+  .bin-card h2 { margin-top:0; font-size:20px; color:#fff; }
+  .status { font-weight:bold; padding:5px 12px; border-radius:12px; color:white; display:inline-block; margin-bottom:8px; font-size:14px;}
+  .status-full { background:#e74c3c; }
+  .status-empty { background:#2ecc71; }
+
+  .alert-yes { color:#ff6b6b; font-weight:bold; }
+  .alert-no { color:#7bed9f; font-weight:bold; }
+
+  .no-result { text-align:center; font-size:22px; color:#fff; margin-top:40px; text-shadow:1px 1px 2px rgba(0,0,0,0.7); }
+
+  #logoutBtn {
+    display: block;
+    margin: 20px auto 40px auto;
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #logoutBtn:hover { background:#c0392b; }
+</style>
+</head>
+<body>
+
+<h1>♻ Smart E-Waste Bin Dashboard</h1>
+
+<!-- Login Form -->
+<div id="loginContainer">
+  <h2>Login</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <span class="forgot" id="forgotBtn">Forgot Password?</span>
+  <div class="error" id="errorMsg"></div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard">
+  <button id="logoutBtn">Logout</button>
+  <input type="text" id="searchInput" placeholder="Search by Location (e.g., Block A)">
+  <div class="bin-container" id="binContainer"></div>
+  <div class="no-result" id="noResult" style="display:none;">No bin found</div>
+</div>
+
+<script>
+const correctUsername = "recycleadmin";
+const correctPassword = "password123";
+
+const loginContainer = document.getElementById("loginContainer");
+const dashboard = document.getElementById("dashboard");
+const loginBtn = document.getElementById("loginBtn");
+const errorMsg = document.getElementById("errorMsg");
+const forgotBtn = document.getElementById("forgotBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+// Sample bins data
+const bins = [
+  { id: "BIN_01", location: "Block A", status: "FULL", temperature: 38, alert: "YES" },
+  { id: "BIN_02", location: "Hostel", status: "EMPTY", temperature: 30, alert: "NO" },
+  { id: "BIN_03", location: "Campus Gate", status: "FULL", temperature: 40, alert: "YES" },
+  { id: "BIN_04", location: "Library", status: "EMPTY", temperature: 28, alert: "NO" },
+  { id: "BIN_05", location: "Sports Complex", status: "FULL", temperature: 36, alert: "YES" },
+  { id: "BIN_06", location: "Cafeteria", status: "EMPTY", temperature: 29, alert: "NO" }
+];
+
+const binContainer = document.getElementById("binContainer");
+const searchInput = document.getElementById("searchInput");
+const noResult = document.getElementById("noResult");
+
+// Login function
+loginBtn.addEventListener("click", () => {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if(username === correctUsername && password === correctPassword){
+    loginContainer.style.display = "none";
+    dashboard.style.display = "block";
+    displayBins(bins);
+  } else {
+    errorMsg.textContent = "Incorrect username or password";
+  }
+});
+
+// Forgot password function (demo)
+forgotBtn.addEventListener("click", () => {
+  alert("Demo Password: 'password123'\nUsername: 'recycleadmin'");
+});
+
+// Logout function
+logoutBtn.addEventListener("click", () => {
+  dashboard.style.display = "none";
+  loginContainer.style.display = "block";
+  errorMsg.textContent = "";
+});
+
+// Display bins
+function displayBins(data) {
+  binContainer.innerHTML = "";
+  if(data.length === 0){
+    noResult.style.display = "block";
+    return;
+  }
+  noResult.style.display = "none";
+  data.forEach(bin => {
+    const card = document.createElement("div");
+    card.className = "bin-card";
+    card.innerHTML = `
+      <h2>${bin.id}</h2>
+      <p><strong>Location:</strong> ${bin.location}</p>
+      <p><strong>Status:</strong> <span class="status ${bin.status==='FULL'?'status-full':'status-empty'}">${bin.status}</span></p>
+      <p><strong>Temperature:</strong> ${bin.temperature}°C</p>
+      <p><strong>Alert:</strong> <span class="${bin.alert==='YES'?'alert-yes':'alert-no'}">${bin.alert}</span></p>
+    `;
+    binContainer.appendChild(card);
+  });
+}
+
+// Search functionality
+searchInput.addEventListener("keyup", () => {
+  const searchText = searchInput.value.toLowerCase();
+  const filteredBins = bins.filter(bin =>
+    bin.location.toLowerCase().includes(searchText)
+  );
+  displayBins(filteredBins);
+});
+</script>
+
+</body>
+</html>
